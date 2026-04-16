@@ -420,20 +420,30 @@ function App() {
             const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
             
             if (signInError) {
-              // If sign in fails, try sign up (assuming account might not exist yet)
+              // If sign in fails, try sign up
               const { error: signUpError } = await supabase.auth.signUp({ email, password });
               if (signUpError) {
-                alert("ログインに失敗しました: " + signUpError.message);
+                if (signUpError.message.includes("already registered")) {
+                  alert("このメールは既に登録されています。正しいパスワードを入力するか、別のメールアドレスをお試しください。");
+                } else {
+                  alert("エラー: " + signUpError.message);
+                }
               } else {
-                alert("新しくアカウントを作成しました。冒険のはじまりです！");
+                alert("新しいアカウントを作成しました！");
               }
             }
             setIsSyncing(false);
-          }} className="space-y-4">
-            <input name="email" type="email" placeholder="メールアドレス" className="glass" style={{ width: '100%', padding: '16px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '16px' }} required />
-            <input name="password" type="password" placeholder="パスワード" className="glass" style={{ width: '100%', padding: '16px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '16px' }} required />
-            <button type="submit" disabled={isSyncing} className="btn-primary" style={{ width: '100%', padding: '16px', borderRadius: '16px', fontWeight: 800 }}>
-              {isSyncing ? "通信中..." : "ログイン / 新規登録"}
+          }} className="space-y-4" style={{ textAlign: 'left' }}>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', marginLeft: '8px', marginBottom: '4px', display: 'block' }}>メールアドレス</label>
+              <input name="email" type="email" placeholder="example@mail.com" className="form-input" style={{ width: '100%', padding: '16px', background: 'white', border: 'none', color: '#1a1a2e', borderRadius: '16px', fontSize: '1rem', fontWeight: 600 }} required />
+            </div>
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', marginLeft: '8px', marginBottom: '4px', display: 'block' }}>パスワード</label>
+              <input name="password" type="password" placeholder="••••••••" className="form-input" style={{ width: '100%', padding: '16px', background: 'white', border: 'none', color: '#1a1a2e', borderRadius: '16px', fontSize: '1rem', fontWeight: 600 }} required />
+            </div>
+            <button type="submit" disabled={isSyncing} className="btn-primary" style={{ width: '100%', padding: '18px', borderRadius: '16px', fontWeight: 900, fontSize: '1.1rem', boxShadow: '0 8px 20px rgba(255, 45, 85, 0.3)' }}>
+              {isSyncing ? "同期準備中..." : "ログイン / 新規登録"}
             </button>
           </form>
           
