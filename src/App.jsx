@@ -413,20 +413,27 @@ function App() {
           <form onSubmit={async (e) => {
             e.preventDefault();
             const email = e.target.email.value;
+            const password = e.target.password.value;
             setIsSyncing(true);
-            const { error } = await supabase.auth.signInWithOtp({ 
-              email,
-              options: {
-                emailRedirectTo: window.location.origin,
+            
+            // Try signing in
+            const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+            
+            if (signInError) {
+              // If sign in fails, try sign up (assuming account might not exist yet)
+              const { error: signUpError } = await supabase.auth.signUp({ email, password });
+              if (signUpError) {
+                alert("ログインに失敗しました: " + signUpError.message);
+              } else {
+                alert("新しくアカウントを作成しました。冒険のはじまりです！");
               }
-            });
+            }
             setIsSyncing(false);
-            if (error) alert(error.message);
-            else alert("ログイン用リンクをメールで送信しました！確認してください。");
           }} className="space-y-4">
-            <input name="email" type="email" placeholder="メールアドレスを入力" className="glass" style={{ width: '100%', padding: '16px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '16px' }} required />
+            <input name="email" type="email" placeholder="メールアドレス" className="glass" style={{ width: '100%', padding: '16px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '16px' }} required />
+            <input name="password" type="password" placeholder="パスワード" className="glass" style={{ width: '100%', padding: '16px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '16px' }} required />
             <button type="submit" disabled={isSyncing} className="btn-primary" style={{ width: '100%', padding: '16px', borderRadius: '16px', fontWeight: 800 }}>
-              {isSyncing ? "送信中..." : "ログイン / 新規登録"}
+              {isSyncing ? "通信中..." : "ログイン / 新規登録"}
             </button>
           </form>
           
