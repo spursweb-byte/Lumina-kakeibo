@@ -388,6 +388,37 @@ function App() {
 
   const isFirstMonth = useMemo(() => format(currentDate, 'yyyy-MM') === '2026-04', [currentDate]);
 
+  if (!user) {
+    return (
+      <div className="app-container centered" style={{ background: 'linear-gradient(to bottom, #0a0a14 0%, #1a1a2e 100%)', minHeight: '100vh', padding: '24px' }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-dark" style={{ width: '100%', maxWidth: '400px', padding: '48px 32px', textAlign: 'center', color: 'white' }}>
+          <div style={{ background: 'rgba(52, 199, 89, 0.1)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 32px' }}>
+            <Cloud size={40} color="#34c759" />
+          </div>
+          <h1 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '16px' }} className="text-gradient">Lumina Kakeibo</h1>
+          <p style={{ color: 'var(--text-dim)', marginBottom: '40px', lineHeight: 1.6 }}>冒険（家計簿）の記録をクラウドに保存しましょう。<br/>ログインすると、他のデバイスとも同期できます。</p>
+          
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            const email = e.target.email.value;
+            setIsSyncing(true);
+            const { error } = await supabase.auth.signInWithOtp({ email });
+            setIsSyncing(false);
+            if (error) alert(error.message);
+            else alert("ログイン用リンクをメールで送信しました！確認してください。");
+          }} className="space-y-4">
+            <input name="email" type="email" placeholder="メールアドレスを入力" className="glass" style={{ width: '100%', padding: '16px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '16px' }} required />
+            <button type="submit" disabled={isSyncing} className="btn-primary" style={{ width: '100%', padding: '16px', borderRadius: '16px', fontWeight: 800 }}>
+              {isSyncing ? "送信中..." : "ログイン / 新規登録"}
+            </button>
+          </form>
+          
+          <p style={{ marginTop: '32px', fontSize: '0.8rem', color: 'var(--text-dim)' }}>※登録済みの家族と同じメールアドレスを使えば、データを共有できます。</p>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="app-container">
       <header className="header" style={{ marginBottom: '24px' }}>
@@ -417,6 +448,16 @@ function App() {
             {user ? <Cloud size={20} color={isSyncing ? 'var(--secondary)' : '#34c759'} /> : <CloudOff size={20} color="var(--text-dim)" />}
           </div>
           <button className="btn-icon" onClick={() => setIsSettingsOpen(true)} style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Settings size={20} /></button>
+          {user && (
+            <button 
+              onClick={() => supabase.auth.signOut()} 
+              className="btn-icon" 
+              style={{ opacity: 0.5 }}
+              title="ログアウト"
+            >
+              <X size={18} />
+            </button>
+          )}
         </div>
       </header>
 
