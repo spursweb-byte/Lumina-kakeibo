@@ -313,6 +313,12 @@ function App() {
     setIsSyncing(false);
   }, [user]);
 
+  useEffect(() => {
+    if (user) {
+      fetchCloudData();
+    }
+  }, [user, fetchCloudData]);
+
   const saveTransaction = async (tx) => {
     const newTransactions = [tx, ...transactions];
     setTransactions(newTransactions);
