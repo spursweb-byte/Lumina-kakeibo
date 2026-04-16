@@ -390,8 +390,20 @@ function App() {
 
   if (!user) {
     return (
-      <div className="app-container centered" style={{ background: 'linear-gradient(to bottom, #0a0a14 0%, #1a1a2e 100%)', minHeight: '100vh', padding: '24px' }}>
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-dark" style={{ width: '100%', maxWidth: '400px', padding: '48px 32px', textAlign: 'center', color: 'white' }}>
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        minHeight: '100vh', 
+        background: 'linear-gradient(to bottom, #0a0a14 0%, #1a1a2e 100%)',
+        padding: '24px'
+      }}>
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }} 
+          animate={{ opacity: 1, scale: 1 }} 
+          className="glass-dark" 
+          style={{ width: '100%', maxWidth: '400px', padding: '48px 32px', textAlign: 'center', color: 'white' }}
+        >
           <div style={{ background: 'rgba(52, 199, 89, 0.1)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 32px' }}>
             <Cloud size={40} color="#34c759" />
           </div>
@@ -402,7 +414,12 @@ function App() {
             e.preventDefault();
             const email = e.target.email.value;
             setIsSyncing(true);
-            const { error } = await supabase.auth.signInWithOtp({ email });
+            const { error } = await supabase.auth.signInWithOtp({ 
+              email,
+              options: {
+                emailRedirectTo: window.location.origin,
+              }
+            });
             setIsSyncing(false);
             if (error) alert(error.message);
             else alert("ログイン用リンクをメールで送信しました！確認してください。");
