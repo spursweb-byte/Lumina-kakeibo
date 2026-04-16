@@ -320,29 +320,49 @@ function App() {
   }, [user, fetchCloudData]);
 
   const saveTransaction = async (tx) => {
-    const newTransactions = [tx, ...transactions];
-    setTransactions(newTransactions);
-    localStorage.setItem('kakeibo-txs', JSON.stringify(newTransactions));
-
-    // Auto-Budget Logic: If salary is entered, update budget!
-    if (tx.type === 'income' && tx.category === 'salary') {
-      const currentMonthStr = format(new Date(), 'yyyy-MM');
-      const monthlySalaryTotal = newTransactions
-        .filter(t => t.type === 'income' && t.category === 'salary' && format(new Date(t.date), 'yyyy-MM') === currentMonthStr)
-        .reduce((sum, t) => sum + Number(t.amount), 0);
-
-      const newB = calculatePotentialBudget(monthlySalaryTotal, newTransactions, yearlyGoal);
-      setMonthlyBudget(newB);
-      localStorage.setItem('kakeibo-budget', newB);
-      setBaseIncome(monthlySalaryTotal);
-      localStorage.setItem('kakeibo-base-income', monthlySalaryTotal);
-    }
+    setIsSyncing(true);
+    // Remove temporary local ID so Supabase can generate a proper UUID
+    const { id: _, ...txForCloud } = tx;
 
     if (supabase && user) {
-      setIsSyncing(true);
-      await supabase.from('transactions').insert([{ ...tx, user_id: user.id }]);
-      setIsSyncing(false);
+      const { data, error } = await supabase
+        .from('transactions')
+        .insert([{ ...txForCloud, user_id: user.id }])
+        .select();
+
+      if (error) {
+        alert("クラウドへの保存に失敗しました: " + error.message);
+        setIsSyncing(false);
+        return;
+      }
+
+      if (data && data[0]) {
+        const upToDateTxs = [data[0], ...transactions];
+        setTransactions(upToDateTxs);
+        localStorage.setItem('kakeibo-txs', JSON.stringify(upToDateTxs));
+        
+        // Auto-Budget Logic
+        if (data[0].type === 'income' && data[0].category === 'salary') {
+          const currentMonthStr = format(new Date(), 'yyyy-MM');
+          const monthlySalaryTotal = upToDateTxs
+            .filter(t => t.type === 'income' && t.category === 'salary' && format(new Date(t.date), 'yyyy-MM') === currentMonthStr)
+            .reduce((sum, t) => sum + Number(t.amount), 0);
+
+          const newB = calculatePotentialBudget(monthlySalaryTotal, upToDateTxs, yearlyGoal);
+          setMonthlyBudget(newB);
+          localStorage.setItem('kakeibo-budget', newB);
+          setBaseIncome(monthlySalaryTotal);
+          localStorage.setItem('kakeibo-base-income', monthlySalaryTotal);
+        }
+      }
+    } else {
+      // Guest mode
+      const newTransactions = [tx, ...transactions];
+      setTransactions(newTransactions);
+      localStorage.setItem('kakeibo-txs', JSON.stringify(newTransactions));
     }
+
+    setIsSyncing(false);
     playCoinSound();
     confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
     setIsAddOpen(false);
@@ -351,15 +371,22 @@ function App() {
   const removeTransaction = async () => {
     if (!deleteId) return;
     const id = deleteId;
+    
+    if (supabase && user) {
+      setIsSyncing(true);
+      const { error } = await supabase.from('transactions').delete().eq('id', id);
+      if (error) {
+        alert("削除に失敗しました: " + error.message);
+        setIsSyncing(false);
+        return;
+      }
+    }
+
     const newTransactions = transactions.filter(t => t.id !== id);
     setTransactions(newTransactions);
     localStorage.setItem('kakeibo-txs', JSON.stringify(newTransactions));
-    if (supabase && user) {
-      setIsSyncing(true);
-      await supabase.from('transactions').delete().eq('id', id);
-      setIsSyncing(false);
-    }
     setDeleteId(null);
+    setIsSyncing(false);
   };
 
   const { filteredTransactions, totalIncome, totalExpense, balance, progress, categorySegments, cumulativeSavings } = useMemo(() => {
